@@ -2,13 +2,13 @@
 
 DURATION=1                         # Durée en minutes
 TIME_INTERVAL=1                    # Intervalle de temps pour la collecte des métriques (en secondes)
-DESTINATION_SERVER="192.168.1.100" # Adresse IP ou nom DNS du serveur Collectd
+DESTINATION_SERVER="10.0.0.46"     # Adresse IP ou nom DNS du serveur Collectd
 DESTINATION_PORT=25826             # Port UDP Collectd par défaut
 INTERFACE="wlp2s0"                 # Interface réseau à surveiller
 HOSTNAME="client-collectd"         # Nom du client dans les métriques Collectd
 
 # Durée en secondes
-nb_sec=$(($DURATION * 60))
+nb_sec=$(($DURATION * 1))
 
 # Chemins de configuration et logs
 BASE_DIR="/tmp/collectd"
@@ -49,6 +49,8 @@ Interval $TIME_INTERVAL
 LoadPlugin cpu
 LoadPlugin memory
 LoadPlugin ethstat
+LoadPlugin interface
+LoadPlugin network
 LoadPlugin logfile
 LoadPlugin write_log
 
@@ -61,8 +63,13 @@ LoadPlugin write_log
   ValuesPercentage true
 </Plugin>
 
-<Plugin "ethstat">
+<Plugin "interface">
   Interface "$INTERFACE"
+  IgnoreSelected false
+</Plugin>
+
+<Plugin "network">
+  Server "$DESTINATION_SERVER" "$DESTINATION_PORT"
 </Plugin>
 
 <Plugin "logfile">
