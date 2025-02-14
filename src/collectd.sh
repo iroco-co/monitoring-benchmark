@@ -1,13 +1,7 @@
 #!/bin/bash
 
-# Vérifier si le script est exécuté en root
-if [[ $EUID -ne 0 ]]; then
-   echo "Ce script doit être exécuté en root. Relance avec sudo."
-   exit 1
-fi
-
-# Variables
-DURATION=1 # Durée en minutes
+DURATION=1                         # Durée en minutes
+TIME_INTERVAL=1                    # Intervalle de temps pour la collecte des métriques (en secondes)
 DESTINATION_SERVER="192.168.1.100" # Adresse IP ou nom DNS du serveur Collectd
 DESTINATION_PORT=25826             # Port UDP Collectd par défaut
 INTERFACE="wlp2s0"                 # Interface réseau à surveiller
@@ -17,9 +11,10 @@ HOSTNAME="client-collectd"         # Nom du client dans les métriques Collectd
 nb_sec=$(($DURATION * 60))
 
 # Chemins de configuration et logs
+BASE_DIR="/tmp/collectd"
 COLLECTD_CONF="/tmp/collectd.conf"
-COLLECTD_LOG="/home/arthurb/envs/iroco/src/monitoring-benchmark/collectd.log"
-COLLECTD_PID="/tmp/collectd_benchmark.pid"
+COLLECTD_PID="/tmp/collectd.pid"
+COLLECTD_LOG="${PWD}/collectd.log"
 
 # Installation de collectd-core si nécessaire
 if ! dpkg -l | grep -q "collectd-core"; then
@@ -47,41 +42,40 @@ done
 # Création du fichier de configuration temporaire pour Collectd
 cat > $COLLECTD_CONF <<EOL
 Hostname "$HOSTNAME"
-BaseDir "/tmp/collectd"
+BaseDir "$BASE_DIR"
 PIDFile "$COLLECTD_PID"
-Interval 1
+Interval $TIME_INTERVAL
+
 LoadPlugin cpu
 LoadPlugin memory
-LoadPlugin interface
-LoadPlugin network
+LoadPlugin ethstat
 LoadPlugin logfile
+LoadPlugin write_log
 
-<Plugin "interface">
-  Interface "$INTERFACE"
-  IgnoreSelected false
-</Plugin>
-
-<Plugin cpu>
+<Plugin "cpu">
   ReportByCpu true
   ReportByState true
+</Plugin>
+
+<Plugin "memory">
   ValuesPercentage true
 </Plugin>
 
-<Plugin memory>
-  ValuesAbsolute true
-  ValuesPercentage true
-</Plugin>
-
-<Plugin "network">
-  Server "$DESTINATION_SERVER" "$DESTINATION_PORT"
+<Plugin "ethstat">
+  Interface "$INTERFACE"
 </Plugin>
 
 <Plugin "logfile">
+  LogLevel "info"
   File "$COLLECTD_LOG"
   Timestamp true
   PrintSeverity true
-  LogLevel "info"
 </Plugin>
+
+<Plugin "write_log">
+  Format "Graphite"
+</Plugin>
+
 EOL
 
 echo "✅ Configuration Collectd générée :"
@@ -94,13 +88,6 @@ rm -f $COLLECTD_LOG
 echo "🚀 Démarrage de Collectd pour $nb_sec secondes..."
 collectd -C $COLLECTD_CONF -f > /dev/null 2>&1 &
 echo $! > $COLLECTD_PID
-
-# Vérifier si Collectd a bien démarré
-sleep 2
-if ! ps -p $(cat $COLLECTD_PID) > /dev/null 2>&1; then
-    echo "❌ Échec du démarrage de Collectd. Vérifiez les logs."
-    exit 1
-fi
 
 # Attente pour la durée spécifiée
 sleep $nb_sec

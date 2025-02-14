@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Variables
-DURATION=1 # Durée en minutes
-TIME_INTERVAL=1 # Intervalle de temps pour la collecte des métriques (en secondes)
-DESTINATION_SERVER="http://192.168.1.100:8080" # Adresse de destination (serveur HTTP ou Vector)
-HOSTNAME="vector-client"                      # Nom du client pour identification
-VECTOR_CONFIG="vector.toml"              # Fichier de configuration temporaire pour Vector
+DURATION=1                                      # Durée en minutes
+TIME_INTERVAL=1                                 # Intervalle de temps pour la collecte des métriques (en secondes)
+DESTINATION_SERVER="http://192.168.1.100:8080"  # Adresse de destination (serveur HTTP ou Vector)
+HOSTNAME="vector-client"                        # Nom du client pour identification
+VECTOR_CONFIG="vector.toml"                     # Fichier de configuration temporaire pour Vector
 
-nb_sec=$(($DURATION * 1))                    # Durée en secondes
+nb_sec=$(($DURATION * 60))                      # Durée en secondes
 
 
 # Génération de la configuration Vector
@@ -22,7 +22,7 @@ collectors = ["cpu", "memory", "network"]
 
 [transforms.metrics_to_logs]
 type = "metric_to_log"
-inputs = ["filter_metrics"]
+inputs = ["host_metrics"]
 
 [sinks.file]
 type = "file"
