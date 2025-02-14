@@ -8,13 +8,12 @@ INTERFACE="wlp2s0"                 # Interface réseau à surveiller
 HOSTNAME="client-collectd"         # Nom du client dans les métriques Collectd
 
 # Durée en secondes
-nb_sec=$(($DURATION * 1))
+nb_sec=$(($DURATION * 60))
 
 # Chemins de configuration et logs
-BASE_DIR="/tmp/collectd"
-COLLECTD_CONF="/tmp/collectd.conf"
-COLLECTD_PID="/tmp/collectd.pid"
-COLLECTD_LOG="${PWD}/collectd.log"
+BASE_DIR="./config"
+COLLECTD_CONF="$BASE_DIR/collectd.conf"
+COLLECTD_PID="$BASE_DIR/collectd.pid"
 
 # Installation de collectd-core si nécessaire
 if ! dpkg -l | grep -q "collectd-core"; then
@@ -39,20 +38,20 @@ for plugin in "${PLUGINS[@]}"; do
     fi
 done
 
+mkdir -p ./config
+
+# Nettoyage des fichiers temporaires
+rm -f $COLLECTD_CONF
+
 # Création du fichier de configuration temporaire pour Collectd
 cat > $COLLECTD_CONF <<EOL
-Hostname "$HOSTNAME"
-BaseDir "$BASE_DIR"
 PIDFile "$COLLECTD_PID"
 Interval $TIME_INTERVAL
 
 LoadPlugin cpu
 LoadPlugin memory
-LoadPlugin ethstat
 LoadPlugin interface
 LoadPlugin network
-LoadPlugin logfile
-LoadPlugin write_log
 
 <Plugin "cpu">
   ReportByCpu true
@@ -71,18 +70,6 @@ LoadPlugin write_log
 <Plugin "network">
   Server "$DESTINATION_SERVER" "$DESTINATION_PORT"
 </Plugin>
-
-<Plugin "logfile">
-  LogLevel "info"
-  File "$COLLECTD_LOG"
-  Timestamp true
-  PrintSeverity true
-</Plugin>
-
-<Plugin "write_log">
-  Format "Graphite"
-</Plugin>
-
 EOL
 
 echo "✅ Configuration Collectd générée :"
@@ -103,9 +90,6 @@ sleep $nb_sec
 echo "🛑 Arrêt de Collectd après la durée spécifiée."
 kill $(cat $COLLECTD_PID)
 rm -f $COLLECTD_PID
-
-# Nettoyage des fichiers temporaires
-rm -f $COLLECTD_CONF
 
 echo "✅ Benchmark terminé. Les données ont été envoyées à $DESTINATION_SERVER:$DESTINATION_PORT."
 echo "📄 Logs disponibles dans $COLLECTD_LOG"

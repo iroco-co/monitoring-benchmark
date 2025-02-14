@@ -4,11 +4,14 @@
 DURATION=1                                      # Durée en minutes
 TIME_INTERVAL=1                                 # Intervalle de temps pour la collecte des métriques (en secondes)
 DESTINATION_SERVER="10.0.0.46:6000"             # Adresse de destination (serveur HTTP ou Vector)
-HOSTNAME="vector-client"                        # Nom du client pour identification
-VECTOR_CONFIG="vector.toml"                     # Fichier de configuration temporaire pour Vector
+VECTOR_CONFIG="./config/vector.toml"                     # Fichier de configuration temporaire pour Vector
 
 nb_sec=$(($DURATION * 1))                      # Durée en secondes
 
+mkdir -p ./config
+
+# Nettoyage
+rm -f $VECTOR_CONFIG
 
 # Génération de la configuration Vector
 cat > $VECTOR_CONFIG <<EOL
@@ -24,16 +27,12 @@ collectors = ["cpu", "memory", "network"]
 type = "metric_to_log"
 inputs = ["host_metrics"]
 
-[sinks.file]
-type = "file"
-inputs = ["metrics_to_logs"]
-encoding.codec = "json"
-path = "./run.json"
-
 [sinks.vector]
-type = "vector"
+type = "socket"
 inputs = ["metrics_to_logs"]
 address = "$DESTINATION_SERVER"
+mode = "udp"
+encoding.codec = "native"
 EOL
 
 echo "Configuration Vector générée :"
@@ -51,7 +50,5 @@ sleep $nb_sec
 echo "Arrêt de Vector après la durée spécifiée."
 kill $(jobs -p)
 
-# Nettoyage
-rm -f $VECTOR_CONFIG
 
 echo "Benchmark terminé. Les données ont été envoyées à $DESTINATION_SERVER."
