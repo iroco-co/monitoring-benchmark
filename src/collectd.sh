@@ -8,7 +8,7 @@ INTERFACE="wlp2s0"                 # Interface réseau à surveiller
 HOSTNAME="client-collectd"         # Nom du client dans les métriques Collectd
 
 # Durée en secondes
-nb_sec=$(($DURATION * 60))
+nb_sec=$(($DURATION * 1))
 
 # Chemins de configuration et logs
 BASE_DIR="./config"
