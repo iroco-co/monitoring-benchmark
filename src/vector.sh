@@ -27,38 +27,36 @@ collectors = ["cpu", "memory", "network"]
 type = "metric_to_log"
 inputs = ["host_metrics"]
 
-[transforms.lite_logs]
-type = "remap"
-inputs = ["metrics_to_logs"]
-source = '''
-  .value = if .counter != null { del(.counter).value } else { del(.gauge).value }  
-  del(.namespace)
-  .name,err = if .tags.cpu != null {"cpu-" + to_string(.tags.cpu) + "-" + to_string(.tags.mode)} else {del(.name)}
-  .name,err = del(.host)+"."+del(.name)
-  # .message,err = .name+" "+ to_string(.value)
+# [transforms.lite_logs]
+# type = "remap"
+# inputs = ["metrics_to_logs"]
+# source = '''
+#   .value = if .counter != null { del(.counter).value } else { del(.gauge).value }  
+#   del(.namespace)
+#   .name,err = if .tags.cpu != null {"cpu-" + to_string(.tags.cpu) + "-" + to_string(.tags.mode)} else {del(.name)}
+#   .name,err = del(.host)+"."+del(.name)
+#   # .message,err = .name+" "+ to_string(.value)
 
-  del(.tags)
-  del(.kind)
-  del(.timestamp)
-  '''
+#   del(.tags)
+#   del(.kind)
+#   del(.timestamp)
+#   '''
 
+# [sinks.console]
+# type = "console"
+# inputs = ["lite_logs"]
+# # encoding.codec = "json"
 
+# encoding.codec = "protobuf"
+# encoding.protobuf.desc_file = "$PWD/config/myproto.desc"
+# encoding.protobuf.message_type = "ExempleMessage"
 
-[sinks.console]
-type = "console"
-inputs = ["lite_logs"]
-# encoding.codec = "json"
-
-encoding.codec = "protobuf"
-encoding.protobuf.desc_file = "$PWD/config/myproto.desc"
-encoding.protobuf.message_type = "ExempleMessage"
-
-# encoding.codec = "csv"
-# encoding.csv.fields = ["host", "name", "value"]
+# # encoding.codec = "csv"
+# # encoding.csv.fields = ["host", "name", "value"]
 
 [sinks.vector]
 type = "socket"
-inputs = ["lite_logs"]
+inputs = ["metrics_to_logs"]
 address = "$DESTINATION_SERVER"
 mode = "udp"
 
@@ -70,7 +68,9 @@ encoding.protobuf.message_type = "ExempleMessage"
 # encoding.codec = "raw_message"
 
 # encoding.codec = "csv"
-# encoding.csv.fields = ["host", "name", "value"]
+# encoding.csv.fields = ["name", "value"]
+
+# encoding.codec = "json"
 EOL
 
 echo "Configuration Vector générée :"

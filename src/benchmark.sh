@@ -1,18 +1,19 @@
 #!/bin/bash
 
 # Benchmark durée
-DURATION=$1 # min
+DURATION=$1 # sec
 
 TIME_BEFORE=5 # sec
 TIME_AFTER=5 # sec
 
-DESTINATION=tir_${DURATION}min
+DESTINATION=$PWD/tir_${DURATION}sec
 
 VECTOR_CONFIG="./config/vector.toml"
 COLLECTD_CONF="./config/collectd.conf"
 COLLECTD_PID="./config/collectd.pid"
 
-nb_sec=$(($DURATION * 1 + $TIME_BEFORE + $TIME_AFTER))
+nb_sec=$(($DURATION * 1 ))
+total_sec=$((($nb_sec+ $TIME_BEFORE + $TIME_AFTER)*2))
 
 
 # Création des fichiers de sortie
@@ -26,7 +27,7 @@ create_dir() {
     echo "Le répertoire ${DESTINATION} existe déjà. Suppression en cours..."
     cleanup
   fi
-  echo "Création du répertoire $(pwd)/${DESTINATION}"
+  echo "Création du répertoire $DESTINATION"
   mkdir -p ${DESTINATION}
   touch ${DESTINATION}/${1}_mem_usage.txt
   touch ${DESTINATION}/${1}_cpu_usage.txt
@@ -75,15 +76,11 @@ start_collectd() {
 cleanup
 stop_vector
 stop_collectd
-create_dir "vector"
-create_dir "collectd"
-kill $(jobs -p)
-echo "Preparation terminée."
+echo "Preparation terminée. Début du benchmark pendant $total_sec ..."
 
 # Benchmark Vector
-sleep 2
 echo "Démarrage du benchmark Vector pour une durée de $nb_sec secondes..."
-start_benchmark "vector"
+exec ./src/collect_cpu.sh $total_sec $DESTINATION > /dev/null 2>&1 &
 sleep $TIME_BEFORE
 
 start_vector
@@ -91,13 +88,10 @@ sleep $nb_sec
 stop_vector
 sleep $TIME_AFTER
 
-kill $(jobs -p)
 echo "Benchmark vector terminé."
 
 # Benchmark Collectd
-sleep 2
 echo "Démarrage du benchmark Collectd pour une durée de $nb_sec secondes..."
-start_benchmark "collectd"
 sleep $TIME_BEFORE
 
 start_collectd
@@ -105,6 +99,10 @@ sleep $nb_sec
 stop_collectd
 sleep $TIME_AFTER
 
-kill $(jobs -p)
-
 echo "Benchmark collectd terminé."
+
+echo "Generation des graphiques..."
+sleep 3
+kill $(jobs -p)
+echo "Benchmark terminé."
+

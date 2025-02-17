@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DURATION=1                         # Durée en minutes
+DURATION=60                         # Durée en minutes
 TIME_INTERVAL=1                    # Intervalle de temps pour la collecte des métriques (en secondes)
 DESTINATION_SERVER="10.0.0.46"     # Adresse IP ou nom DNS du serveur Collectd
 DESTINATION_PORT=25826             # Port UDP Collectd par défaut
