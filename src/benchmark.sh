@@ -2,6 +2,7 @@
 
 # Benchmark durée
 DURATION=$1 # sec
+STEP=1 # sec
 
 TIME_BEFORE=5 # sec
 TIME_AFTER=5 # sec
@@ -12,7 +13,7 @@ VECTOR_CONFIG="./config/vector.toml"
 COLLECTD_CONF="./config/collectd.conf"
 COLLECTD_PID="./config/collectd.pid"
 
-nb_sec=$(($DURATION * 1 ))
+nb_sec=$(($DURATION * $STEP))
 total_sec=$((($nb_sec+ $TIME_BEFORE + $TIME_AFTER)*2))
 
 
@@ -51,14 +52,7 @@ stop_vector() {
 }
 
 start_benchmark() {
-  # Benchmark mémoire
-  free -s 1 -c $nb_sec | grep Mem > ${DESTINATION}/${1}_mem_usage.txt &
-
-  # Benchmark CPU
-  LC_NUMERIC=en_EN.UTF-8 top -b -d 1 -n $nb_sec | grep Cpu > ${DESTINATION}/${1}_cpu_usage.txt &
-
-  # Benchmark réseau
-  sar -n DEV 1 $nb_sec | grep wlp2s0 > ${DESTINATION}/${1}_network_usage.txt &
+  exec ./src/collect_data.sh --duration $DURATION --time-before $TIME_BEFORE --time-after $TIME_AFTER --step $STEP  $DESTINATION > /dev/null 2>&1 &
 }
 
 start_vector() {
@@ -80,7 +74,7 @@ echo "Preparation terminée. Début du benchmark pendant $total_sec ..."
 
 # Benchmark Vector
 echo "Démarrage du benchmark Vector pour une durée de $nb_sec secondes..."
-exec ./src/collect_cpu.sh $total_sec $DESTINATION > /dev/null 2>&1 &
+start_benchmark
 sleep $TIME_BEFORE
 
 start_vector
