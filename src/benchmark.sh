@@ -1,5 +1,7 @@
 #!/bin/bash
 
+BASE_TIME=$(date -d "2025-03-12 00:00:00" +%s)
+
 # Benchmark durée
 DURATION=$1 # sec
 STEP=1 # sec
@@ -13,8 +15,9 @@ VECTOR_CONFIG="./config/vector.toml"
 COLLECTD_CONF="./config/collectd.conf"
 COLLECTD_PID="./config/collectd.pid"
 
-nb_sec=$(($DURATION * $STEP))
-total_sec=$((($nb_sec+ $TIME_BEFORE + $TIME_AFTER)*2))
+nb_sec_collect=$(($DURATION + $TIME_BEFORE + $TIME_AFTER))
+
+total_sec=$(($nb_sec_collect*2))
 
 
 # Création des fichiers de sortie
@@ -30,9 +33,11 @@ create_dir() {
   fi
   echo "Création du répertoire $DESTINATION"
   mkdir -p ${DESTINATION}
-  touch ${DESTINATION}/${1}_mem_usage.txt
-  touch ${DESTINATION}/${1}_cpu_usage.txt
-  touch ${DESTINATION}/${1}_network_usage.txt
+  touch ${DESTINATION}/vars
+  echo "NB_SECONDS=$nb_sec_collect" > "$DESTINATION/vars"
+  echo "BASE_TIME=$BASE_TIME" >> "$DESTINATION/vars"
+  echo "Variables enregistrées dans $DESTINATION/vars"
+  
 }
 
 stop_collectd() {
@@ -51,8 +56,9 @@ stop_vector() {
   fi
 }
 
-start_benchmark() {
-  exec ./src/collect_data.sh --duration $DURATION --time-before $TIME_BEFORE --time-after $TIME_AFTER --step $STEP  $DESTINATION > /dev/null 2>&1 &
+start_collect_data() {
+  echo "Démarrage de la collecte de données pour $1... durée: $nb_sec_collect secondes"
+  exec ./src/collect_data.sh --base-time $BASE_TIME --nb-seconds $nb_sec_collect $DESTINATION/$1 > /dev/null 2>&1 &
 }
 
 start_vector() {
@@ -68,34 +74,34 @@ start_collectd() {
 
 # Main
 cleanup
+create_dir
 stop_vector
 stop_collectd
 echo "Preparation terminée. Début du benchmark pendant $total_sec ..."
 
 # Benchmark Vector
-echo "Démarrage du benchmark Vector pour une durée de $nb_sec secondes..."
-start_benchmark
+start_collect_data vector
 sleep $TIME_BEFORE
-
 start_vector
-sleep $nb_sec
+sleep $DURATION
 stop_vector
 sleep $TIME_AFTER
 
 echo "Benchmark vector terminé."
 
 # Benchmark Collectd
-echo "Démarrage du benchmark Collectd pour une durée de $nb_sec secondes..."
+start_collect_data collectd
 sleep $TIME_BEFORE
 
 start_collectd
-sleep $nb_sec
+sleep $DURATION
 stop_collectd
 sleep $TIME_AFTER
 
 echo "Benchmark collectd terminé."
 
 echo "Generation des graphiques..."
+exec src/agregate_graph.sh $DESTINATION
 sleep 3
 kill $(jobs -p)
 echo "Benchmark terminé."

@@ -2,9 +2,11 @@
 
 # Initialisation des variables
 NB_SECONDS=$1
-DESTINATION=$2
+BASE_TIME=$2
+DESTINATION=$3
 
 echo "Nombre de secondes: $NB_SECONDS"
+echo "Temps de base: $BASE_TIME"
 echo "Destination: $DESTINATION"
 
 network_graph() {
@@ -12,7 +14,7 @@ network_graph() {
 	--width 800 --height 300 \
 	--title "Utilisation réseau sur les $NB_SECONDS dernières secondes" \
 	--vertical-label "Kilobits par seconde" \
-	--start -${NB_SECONDS}sec --end now \
+	--start $BASE_TIME  --end $BASE_TIME+$NB_SECONDS\
 	DEF:tx=$DESTINATION/network.rrd:tx:AVERAGE \
 	LINE1:tx#0000FF:"Upload"
 }
@@ -23,7 +25,7 @@ cpu_graph() {
 	--width 800 --height 300 \
 	--title "Utilisation CPU sur les $NB_SECONDS dernières secondes" \
 	--vertical-label "CPU usage" \
-	--start -${NB_SECONDS}sec --end now \
+	--start $BASE_TIME  --end $BASE_TIME+$NB_SECONDS\
 	--lower-limit 0 --upper-limit 100 \
 	DEF:user=$DESTINATION/cpu.rrd:user:AVERAGE \
 	DEF:nice=$DESTINATION/cpu.rrd:nice:AVERAGE \
@@ -32,12 +34,12 @@ cpu_graph() {
 	DEF:irq=$DESTINATION/cpu.rrd:irq:AVERAGE \
 	DEF:softirq=$DESTINATION/cpu.rrd:softirq:AVERAGE \
 	CDEF:total=user,nice,system,iowait,irq,softirq,+,+,+,+,+ \
-	AREA:user#FF0000:"User" \
-	STACK:nice#00FF00:"Nice" \
-	STACK:system#0000FF:"System" \
-	STACK:iowait#FFFF00:"I/O Wait" \
-	STACK:irq#00FFFF:"IRQ" \
-	STACK:softirq#FF00FF:"Soft IRQ" \
+	AREA:user:"User" \
+	STACK:nice:"Nice" \
+	STACK:system:"System" \
+	STACK:iowait:"I/O Wait" \
+	STACK:irq:"IRQ" \
+	STACK:softirq:"Soft IRQ" \
 
 }
 
@@ -47,7 +49,7 @@ memory_graph() {
 	--width 800 --height 300 \
 	--title "Utilisation mémoire sur les $NB_SECONDS dernières secondes" \
 	--vertical-label "Pourcentage" \
-	--start -${NB_SECONDS}sec --end now \
+	--start $BASE_TIME  --end $BASE_TIME+$NB_SECONDS\
 	DEF:used=$DESTINATION/memory.rrd:used:AVERAGE \
 	DEF:free=$DESTINATION/memory.rrd:free:AVERAGE \
 	DEF:available=$DESTINATION/memory.rrd:available:AVERAGE \
