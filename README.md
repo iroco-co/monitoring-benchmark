@@ -20,6 +20,10 @@ le bench doit permetre de visualiser les valeurs avant, pendant et après le dé
 ## Collectd
   Collectd est un outil de monitoring qui permet de collecter des métriques système et de les exporter vers un serveur de monitoring.
   le protocole réseau utilisé dépendra de la db utilisée (greptimedb, influxDB)
+  ### Installation
+  ```
+  sudo apt install collectd
+  ```
 
 ## vector
   Vector fonctionne avec des agents de collecte qui envoient les métriques à un serveur de monitoring centralisé.
