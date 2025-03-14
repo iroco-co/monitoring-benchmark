@@ -52,6 +52,7 @@ create_dir() {
 store_variables() {
   echo "NB_SECONDS=$NB_SECONDS" > "$DESTINATION/vars"
   echo "BASE_TIME=$BASE_TIME" >> "$DESTINATION/vars"
+  echo "STEP=$STEP" >> "$DESTINATION/vars"
   echo "Variables enregistrées dans $DESTINATION/vars"
 }
 

@@ -66,7 +66,7 @@ stop_vector() {
 
 start_collect_data() {
   echo "Démarrage de la collecte de données pour $1... durée: $nb_sec_collect secondes"
-  exec ./src/collect_data.sh --base-time $BASE_TIME --nb-seconds $nb_sec_collect $DESTINATION/$1 > /dev/null 2>&1 &
+  exec ./src/collect_data.sh --base-time $BASE_TIME --nb-seconds $nb_sec_collect --step $STEP $DESTINATION/$1 > /dev/null 2>&1 &
 }
 
 start_vector() {
@@ -76,7 +76,7 @@ start_vector() {
 
 start_collectd() {
   echo "Démarage Collectd"
-  timeout $DURATION collectd -C $CONFIG_DIR -f #> /dev/null 2>&1 &
+  timeout $DURATION collectd -C $CONFIG_DIR/collectd.conf -f #> /dev/null 2>&1 &
 }
 
 bench_vector() {
@@ -106,9 +106,9 @@ create_dir
 stop_vector
 stop_collectd
 
-bench_vector csv
-bench_vector protobuf
-bench_vector json
+# bench_vector csv
+# bench_vector protobuf
+# bench_vector json
 bench_collectd
 
 sleep 1
