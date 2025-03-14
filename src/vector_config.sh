@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Variables
+# Initialisation des variables
 TIME_INTERVAL=1                                 # Intervalle de temps pour la collecte des métriques (en secondes)
 DESTINATION_SERVER="10.0.0.46"                  # Adresse de destination (serveur HTTP ou Vector)
 NETWORK_INTERFACE="wlp2s0"                      # Interface réseau à surveiller
 ENCODING_TYPE="csv"                             # Type d'encodage des données (csv, json, protobuf, raw_message)
-
 CONFIG_DIR="./config"                           # Répertoire de configuration
 
 
@@ -33,7 +32,7 @@ echo encoding-type: $ENCODING_TYPE
 echo Config directory : $CONFIG_DIR
 
 
-vector_config="$CONFIG_DIR/vector_$ENCODING_TYPE.toml"            # Fichier de configuration temporaire pour Vector
+vector_config="$CONFIG_DIR/vector_$ENCODING_TYPE.tom"            # Fichier de configuration temporaire pour Vector
 
 if [ "$ENCODING_TYPE" == "csv" ]; then
   destination_port=6000
@@ -91,5 +90,5 @@ csv.fields = ["name", "value"]
 EOL
 fi
 
-echo "Configuration Vector générée :"
+echo "✅ Configuration Vector générée :"
 cat $vector_config

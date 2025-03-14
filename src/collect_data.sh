@@ -1,13 +1,11 @@
 #!/bin/bash
 
 # Initialisation des variables
-NB_SECONDS=10
-STEP=1
-DESTINATION="$PWD/tir_@test"
-
-NETWORK_INTERFACE="wlp2s0"
-
-BASE_TIME=$(date +%s)
+NB_SECONDS=10                   # Nombre de secondes à collecter
+STEP=1                          # Pas de temps
+DESTINATION="$PWD/tir_@test"    # Répertoire de destination des fichiers RRD
+NETWORK_INTERFACE="wlp2s0"      # Interface réseau à surveiller
+BASE_TIME=$(date +%s)           # Temps de base pour les données
 
 # Fonction pour afficher l'aide
 usage() {
@@ -49,6 +47,7 @@ create_dir() {
   mkdir -p ${DESTINATION}
 }
 
+# Fonction pour enregistrer les variables nécéssaires pour les graphiques
 store_variables() {
   echo "NB_SECONDS=$NB_SECONDS" > "$DESTINATION/vars"
   echo "BASE_TIME=$BASE_TIME" >> "$DESTINATION/vars"
@@ -59,11 +58,7 @@ store_variables() {
 create_dir
 store_variables
 
-# Création de la base de données RRD pour le CPU 
-# DS-> Data Source : user -> nom de la métrique, COUNTER -> type de données, 5 -> facteur de normalisation, 0 -> valeur minimale, U -> valeur maximale illimitée
-# RRA -> Round Robin Archive : AVERAGE -> type de stockage, 0.5 -> facteur de normalisation, 1 -> nombre de données à moyenner, $((NB_MINUTES * 60)) -> nombre de points de données à stocker
-
-
+# Création des bases de données RRD
 rrdtool create $DESTINATION/cpu.rrd \
 --start $(($BASE_TIME - 1)) \
 --step $STEP \
@@ -110,11 +105,11 @@ collect_memory () {
 	echo $MEMORY_DATA
 }
 
-
+# Collecte des données
 
 sec_counter=0
+echo "Collecte des données en cours... durée: $NB_SECONDS secondes"
 while [ $sec_counter -lt $(($NB_SECONDS+1)) ]; do
-	echo "Collecte des données pour la seconde $sec_counter"
 	collect_network $sec_counter &
 	collect_cpu $sec_counter &
 	collect_memory $sec_counter &

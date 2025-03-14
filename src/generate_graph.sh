@@ -1,8 +1,12 @@
 #!/bin/bash
 
 # Initialisation des variables
+DESTINATION="$PWD/tir_@test"
 
+# Récupération des variables
 DESTINATION=$1
+
+# Constantes
 WIDTH=$(echo "800 * 1.5" | bc)
 HEIGHT=$(echo "300 * 1.5" | bc)
 
@@ -79,6 +83,7 @@ memory_graph() {
 	COMMENT:"\n"
 }
 
+# Génération des graphiques
 network_graph
 cpu_graph
 memory_graph

@@ -3,6 +3,7 @@
 # Initialisation des variables
 DESTINATION=$1
 
+# Constantes
 WIDTH=$(echo "800 * 1.5" | bc)
 HEIGHT=$(echo "300 * 1.5" | bc)
 
@@ -23,10 +24,10 @@ echo "Destination: $DESTINATION"
 end_time=$(( BASE_TIME + NB_SECONDS ))
 
 color_index=0
-colors=( "#0000FF" "#FF0000" "#00FF00" "#00FFFF" "#FF00FF" "#FFFF00")
+COLORS=( "#0000FF" "#FF0000" "#00FF00" "#00FFFF" "#FF00FF" "#FFFF00")
 
 get_color() {
-  local color="${colors[$1]}"
+  local color="${COLORS[$1]}"
   if [ -z "$color" ]; then
     color="#$(printf '%06X' $(( RANDOM % 16777215 )))"
   fi
@@ -38,6 +39,7 @@ network_graph() {
   local args=()
   local color_index=0
 
+  # 
   for dir in "$DESTINATION"/*/; do
     local folder
     folder=$(basename "$dir")
@@ -47,7 +49,6 @@ network_graph() {
             LINE2:${folder}_average$(get_color $color_index):"Moyenne \:" GPRINT:${folder}_average:"%.2lf kb/s"
             COMMENT:"\n"
             )
-  
 
     color_index=$((color_index + 1))
 

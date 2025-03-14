@@ -1,15 +1,17 @@
 #!/bin/bash
 
-TIME_INTERVAL=1                    # Intervalle de temps pour la collecte des métriques (en secondes)
-DESTINATION_SERVER="10.0.0.46"     # Adresse IP ou nom DNS du serveur Collectd
-CONF_DIR="./config"
-NETWORK_INTERFACE="wlp2s0"         # Interface réseau à surveiller
+# Initialisation des variables
+TIME_INTERVAL=1                     # Intervalle de temps pour la collecte des métriques (en secondes)
+DESTINATION_SERVER="10.0.0.46"      # Adresse IP ou nom DNS du serveur Collectd
+NETWORK_INTERFACE="wlp2s0"          # Interface réseau à surveiller
+CONFIG_DIR="./config"               # Répertoire de configuration
 
-HOSTNAME="client-collectd"         # Nom du client dans les métriques Collectd
-DESTINATION_PORT=25826             # Port UDP Collectd par défaut
+# Constantes
+HOSTNAME="client-collectd"          # Nom du client dans les métriques Collectd
+DESTINATION_PORT=25826              # Port UDP Collectd par défaut
 
 usage() {
-  echo "Usage: $0 --duration <duration> --destination-server <destination-server> --network-interface <network-interface> --time-interval <time-interval> <conf-dir>"
+  echo "Usage: $0 --destination-server <destination-server> --network-interface <network-interface> --time-interval <time-interval> <conf-dir>"
   exit 1
 }
 
@@ -17,20 +19,19 @@ usage() {
 # Analyse des options de ligne de commande
 while [[ "$#" -gt 0 ]]; do
   case $1 in
-    --duration) DURATION="$2"; shift ;;
     --destination-server) DESTINATION_SERVER="$2"; shift ;;
 		--network-interface) NETWORK_INTERFACE="$2"; shift ;;
 		--time-interval) TIME_INTERVAL="$2"; shift ;;
     --help) usage ;;
-    *) CONF_DIR="$1" ;;
+    *) CONFIG_DIR="$1" ;;
   esac
   shift
 done
 
 
 # Chemins de configuration et logs
-collectd_conf="$CONF_DIR/collectd.conf"
-collectd_pid="$CONF_DIR/collectd.pid"
+collectd_conf="$CONFIG_DIR/collectd.conf"
+collectd_pid="$CONFIG_DIR/collectd.pid"
 
 # Installation de collectd-core si nécessaire
 if ! dpkg -l | grep -q "collectd-core"; then
@@ -80,7 +81,7 @@ LoadPlugin network
 </Plugin>
 
 <Plugin "interface">
-  Interface "$INTERFACE"
+  Interface "$NETWORK_INTERFACE"
   IgnoreSelected false
 </Plugin>
 
@@ -91,7 +92,4 @@ EOL
 
 echo "✅ Configuration Collectd générée :"
 cat $collectd_conf
-
-# Supprimer l'ancien fichier de log
-rm -f $COLLECTD_LOG
 

@@ -1,14 +1,16 @@
 #!/bin/bash
 
-# Initialize Vector Aggregator
-DECODING_CODEC="csv"
+# Initialisation des variables
+DECODING_CODEC="csv"                    # Type de décodage des données (csv, json, protobuf)
 
-DECODING_CODEC=$1 # protobuf or bytes
+# Analyse des options de ligne de commande
+DECODING_CODEC=$1                           
 
 config_file="${PWD}/config/vector_$DECODING_CODEC.toml"
 
 port=6000
 
+# Configuration de décodage en fonction du codec
 decoding_config="""
 decoding.codec = \"bytes\"
 """
@@ -31,11 +33,7 @@ else
     exit 1
 fi
 
-
-
-
-
-# Write the basic configuration to the file
+# Génération du fichier de configuration Vector
 cat <<EOL > $config_file
 [sources.vector_source]
 type = "socket"
@@ -49,5 +47,5 @@ ${decoding_config}
     encoding.codec = "$output_codec"
 EOL
 
-# Start the Vector service
+# Démarrage de Vector
 vector --config $config_file

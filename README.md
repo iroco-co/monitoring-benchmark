@@ -19,7 +19,7 @@ le bench doit permetre de visualiser les valeurs avant, pendant et après le dé
 
 ## Collectd
   Collectd est un outil de monitoring qui permet de collecter des métriques système et de les exporter vers un serveur de monitoring.
-  le protocole réseau utilisé dépendra de la db utilisée (greptimedb, influxDB)
+  Il est très légeret stable.
   ### Installation
   ```
   sudo apt install collectd
@@ -47,3 +47,38 @@ le bench doit permetre de visualiser les valeurs avant, pendant et après le dé
   ### Documentation
   [https://vector.dev/docs/](https://vector.dev/docs/)
   
+
+## Fichiers sources
+
+Les fichiers de benchmark sont disponibles dans le dossier `src` de ce repository.
+
+### collect_data.sh
+```bash
+/bin/bash src/collect_data.sh --nb-seconds [seconds] --step [seconds] --network-interface [network-interface] --base-time[base-time(seconds)] [destination]
+```
+Ce script permet de collecter les métriques système (CPU, mémoire, réseau) sur un temps donné. Il fonctionne avec rrdtool qui est un outil de stockage de données très léger et performant.
+Il va donc générer un dossier source dans lequel il vas créer les fichiers rrd qui vont stocker les données collectées.
+Il va également générer un fichier `vars` qui contient les de configuration nécessaires pour la génération de graphes.
+
+### generate_graph.sh
+```bash
+/bin/bash src/generate_graph.sh [source_folder]
+```
+Ce script permet de générer les graphes à partir des fichiers `cpu.rrd`, `memory.rrd` et `network.rrd` du __source_foleder__ généré par le script `collect_data.sh`. Il va générer les graphes et les stocker dans ce même __source_foleder__.
+
+### aggregate_graph.sh
+```bash
+/bin/bash src/aggregate_graph.sh [source_folder]
+```
+Ce script permet de générer des graphes cpu, memoire et network qui supperposent les courbes provenant de plusieurs collect_data différents. Il va aller chercher les fichiers `cpu.rrd`, `memory.rrd` et `network.rrd` de chaque folder du __source_folder__ et les superposer dans un graphe. Pour fonctionner, il a besoin d'un fichier `vars` dans son __source_folder__ qui contient les informations de configuration (BASE_TIME et NB_SECONDS).
+
+### collectd_config.sh
+```bash
+/bin/bash src/collectd_config.sh --duration [duration(seconds)]--destination-server [ip_destination_server] --time-interval [time_interval(seconds)] [destination_folder]
+```
+Ce scripte permet de générer un fichier de configuration pour collectd avec les parametres passés en argument. Il va générer un fichier `collectd.conf` dans le __destination_folder__.
+
+### vector_config.sh
+```bash
+  /bin/bash src/vector_config.sh --duration [duration(seconds)] --destination-server [ip_destination_server] --time-interval [time_interval(seconds)]  --network-interface [network_interface] --encoding-type [encoding_type] __destination_folder__
+```
