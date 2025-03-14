@@ -1,9 +1,20 @@
 #!/bin/bash
 
 # Initialisation des variables
-NB_SECONDS=$1
-BASE_TIME=$2
-DESTINATION=$3
+
+DESTINATION=$1
+WIDTH=$(echo "800 * 1.5" | bc)
+HEIGHT=$(echo "300 * 1.5" | bc)
+
+load_variables() {
+	if [ -f "$DESTINATION/vars" ]; then
+		source "$DESTINATION/vars"
+	else
+		echo "Fichier de variables introuvable."
+	fi
+}
+
+load_variables
 
 echo "Nombre de secondes: $NB_SECONDS"
 echo "Temps de base: $BASE_TIME"
@@ -11,22 +22,25 @@ echo "Destination: $DESTINATION"
 
 network_graph() {
 	rrdtool graph $DESTINATION/network_usage.png \
-	--width 800 --height 300 \
+	--width $WIDTH --height $HEIGHT \
 	--title "Utilisation réseau sur les $NB_SECONDS dernières secondes" \
 	--vertical-label "Kilobits par seconde" \
 	--start $BASE_TIME  --end $BASE_TIME+$NB_SECONDS\
 	DEF:tx=$DESTINATION/network.rrd:tx:AVERAGE \
-	LINE1:tx#0000FF:"Upload"
+	VDEF:average=tx,AVERAGE \
+	AREA:tx#0000FF:"Upload" \
+	COMMENT:"\n" \
+	LINE1:average#000000:"Average usage\: " GPRINT:average:"%.2lf kb/s" \
+	COMMENT:"\n"
 }
 
 cpu_graph() {
 
 	rrdtool graph $DESTINATION/cpu_usage.png \
-	--width 800 --height 300 \
+	--width $WIDTH --height $HEIGHT \
 	--title "Utilisation CPU sur les $NB_SECONDS dernières secondes" \
 	--vertical-label "CPU usage" \
 	--start $BASE_TIME  --end $BASE_TIME+$NB_SECONDS\
-	--lower-limit 0 --upper-limit 100 \
 	DEF:user=$DESTINATION/cpu.rrd:user:AVERAGE \
 	DEF:nice=$DESTINATION/cpu.rrd:nice:AVERAGE \
 	DEF:system=$DESTINATION/cpu.rrd:system:AVERAGE \
@@ -34,32 +48,35 @@ cpu_graph() {
 	DEF:irq=$DESTINATION/cpu.rrd:irq:AVERAGE \
 	DEF:softirq=$DESTINATION/cpu.rrd:softirq:AVERAGE \
 	CDEF:total=user,nice,system,iowait,irq,softirq,+,+,+,+,+ \
-	AREA:user:"User" \
-	STACK:nice:"Nice" \
-	STACK:system:"System" \
-	STACK:iowait:"I/O Wait" \
-	STACK:irq:"IRQ" \
-	STACK:softirq:"Soft IRQ" \
-
+	VDEF:average=total,AVERAGE \
+	AREA:user#FF0000:"User" \
+	STACK:nice#00FF00:"Nice" \
+	STACK:system#0000FF:"System" \
+	STACK:iowait#FFFF00:"I/O Wait" \
+	STACK:irq#00FFFF:"IRQ" \
+	STACK:softirq#FF00FF:"Soft IRQ" \
+	COMMENT:"\n" \
+	LINE1:average#000000:"Average usage\: " GPRINT:average:"%.2lf %%" \
+	COMMENT:"\n"
 }
 
 
 memory_graph() {
 	rrdtool graph $DESTINATION/memory_usage.png \
-	--width 800 --height 300 \
+	--width $WIDTH --height $HEIGHT \
 	--title "Utilisation mémoire sur les $NB_SECONDS dernières secondes" \
 	--vertical-label "Pourcentage" \
 	--start $BASE_TIME  --end $BASE_TIME+$NB_SECONDS\
 	DEF:used=$DESTINATION/memory.rrd:used:AVERAGE \
 	DEF:free=$DESTINATION/memory.rrd:free:AVERAGE \
 	DEF:available=$DESTINATION/memory.rrd:available:AVERAGE \
-	'CDEF:total=used,free,+,available,+' \
-	'CDEF:used_pct=used,total,/,100,*' \
-	'CDEF:free_pct=free,total,/,100,*' \
-	'CDEF:available_pct=available,total,/,100,*' \
-	AREA:used_pct#FF0000:"Used     " \
-	STACK:free_pct#00FF00:"Free     " \
-	STACK:available_pct#0000FF:"Available"
+	CDEF:total=used,free,+,available,+ \
+	CDEF:used_pct=used,total,/,100,* \
+	VDEF:average=used_pct,AVERAGE \
+	AREA:used_pct#FF0000:"Used" \
+	COMMENT:"\n" \
+	LINE1:average#000000:"Average usage\: " GPRINT:average:"%.2lf %%" \
+	COMMENT:"\n"
 }
 
 network_graph

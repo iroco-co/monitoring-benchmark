@@ -3,6 +3,9 @@
 # Initialisation des variables
 DESTINATION=$1
 
+WIDTH=$(echo "800 * 1.5" | bc)
+HEIGHT=$(echo "300 * 1.5" | bc)
+
 load_variables() {
   if [ -f "$DESTINATION/vars" ]; then
     source "$DESTINATION/vars"
@@ -20,7 +23,7 @@ echo "Destination: $DESTINATION"
 end_time=$(( BASE_TIME + NB_SECONDS ))
 
 color_index=0
-colors=( "#0000FF" "#FF0000" "#00FF00" "#FFFF00" "#00FFFF" "#FF00FF" )
+colors=( "#0000FF" "#FF0000" "#00FF00" "#00FFFF" "#FF00FF" "#FFFF00")
 
 get_color() {
   local color="${colors[$1]}"
@@ -38,19 +41,21 @@ network_graph() {
   for dir in "$DESTINATION"/*/; do
     local folder
     folder=$(basename "$dir")
-    args+=( DEF:${folder}_tx=${DESTINATION}/${folder}/network.rrd:tx:AVERAGE \
-            VDEF:${folder}_average=${folder}_tx,AVERAGE 
+    args+=( DEF:${folder}_tx=${DESTINATION}/${folder}/network.rrd:tx:AVERAGE
+            VDEF:${folder}_average=${folder}_tx,AVERAGE
+            LINE1:${folder}_tx$(get_color $color_index):"${folder} upload"
+            LINE2:${folder}_average$(get_color $color_index):"Moyenne \:" GPRINT:${folder}_average:"%.2lf kb/s"
+            COMMENT:"\n"
             )
-    
-
-    args+=( "LINE1:${folder}_tx$(get_color $color_index):${folder} upload" )
-    args+=( "LINE2:${folder}_average$(get_color $color_index):Moyenne_${folder}" )
-    
-    color_index=$((color_index + 1))
-  done
   
+
+    color_index=$((color_index + 1))
+
+    exec src/generate_graph.sh $DESTINATION/$folder > /dev/null 2>&1 &
+  done
+
   rrdtool graph "$DESTINATION/network_usage.png" \
-    --width 800 --height 300 \
+    --width $WIDTH --height $HEIGHT \
     --title "Utilisation réseau sur les $NB_SECONDS dernières secondes" \
     --vertical-label "Kilobits par seconde" \
     --start "$BASE_TIME" --end "$end_time" \
@@ -67,31 +72,29 @@ cpu_graph() {
   for dir in "$DESTINATION"/*/; do
     local folder
     folder=$(basename "$dir")
-    args+=( DEF:${folder}_user=$DESTINATION/${folder}/cpu.rrd:user:AVERAGE \
-            DEF:${folder}_nice=$DESTINATION/${folder}/cpu.rrd:nice:AVERAGE \
-            DEF:${folder}_system=$DESTINATION/${folder}/cpu.rrd:system:AVERAGE \
-            DEF:${folder}_iowait=$DESTINATION/${folder}/cpu.rrd:iowait:AVERAGE \
-            DEF:${folder}_irq=$DESTINATION/${folder}/cpu.rrd:irq:AVERAGE \
-            DEF:${folder}_softirq=$DESTINATION/${folder}/cpu.rrd:softirq:AVERAGE \
+    args+=( DEF:${folder}_user=$DESTINATION/${folder}/cpu.rrd:user:AVERAGE
+            DEF:${folder}_nice=$DESTINATION/${folder}/cpu.rrd:nice:AVERAGE
+            DEF:${folder}_system=$DESTINATION/${folder}/cpu.rrd:system:AVERAGE
+            DEF:${folder}_iowait=$DESTINATION/${folder}/cpu.rrd:iowait:AVERAGE
+            DEF:${folder}_irq=$DESTINATION/${folder}/cpu.rrd:irq:AVERAGE
+            DEF:${folder}_softirq=$DESTINATION/${folder}/cpu.rrd:softirq:AVERAGE
             CDEF:${folder}_total=${folder}_user,${folder}_nice,${folder}_system,${folder}_iowait,${folder}_irq,${folder}_softirq,+,+,+,+,+  
             VDEF:${folder}_average=${folder}_total,AVERAGE 
+            LINE1:${folder}_total$(get_color $color_index):"${folder} total cpu usage"
+            LINE2:${folder}_average$(get_color $color_index):"Moyenne \:" GPRINT:${folder}_average:"%.2lf %%"
+            COMMENT:"\n"
             )
             
-
-
-    args+=( "LINE1:${folder}_total$(get_color $color_index):${folder} total cpu usage")
-    args+=( "LINE2:${folder}_average$(get_color $color_index):Moyenne_${folder}" )
 
 
     color_index=$((color_index + 1))
   done
 
 	rrdtool graph $DESTINATION/cpu_usage.png \
-    --width 800 --height 300 \
+    --width $WIDTH --height $HEIGHT \
     --title "Utilisation CPU sur les $NB_SECONDS dernières secondes" \
     --vertical-label "CPU usage" \
     --start $BASE_TIME  --end $end_time\
-    --lower-limit 0 --upper-limit 100 \
     "${args[@]}"
 
 }
@@ -104,26 +107,27 @@ memory_graph() {
   for dir in "$DESTINATION"/*/; do
     local folder
     folder=$(basename "$dir")
-    args+=(
+    args+=( DEF:${folder}_used=$DESTINATION/${folder}/memory.rrd:used:AVERAGE
+            DEF:${folder}_free=$DESTINATION/${folder}/memory.rrd:free:AVERAGE
+            DEF:${folder}_available=$DESTINATION/${folder}/memory.rrd:available:AVERAGE
+            CDEF:${folder}_total=${folder}_used,${folder}_free,+,${folder}_available,+
+            CDEF:${folder}_used_pct=${folder}_used,${folder}_total,/,100,* 
+            VDEF:${folder}_average=${folder}_used_pct,AVERAGE 
+            LINE1:${folder}_used_pct$(get_color $color_index):"${folder} used memory"
+            LINE2:${folder}_average$(get_color $color_index):"Moyenne \:" GPRINT:${folder}_average:"%.2lf %%"
+            COMMENT:"\n"
+            )
 
-    )
+    color_index=$((color_index + 1))
   done
 	rrdtool graph $DESTINATION/memory_usage.png \
-	--width 800 --height 300 \
+	--width $WIDTH --height $HEIGHT \
 	--title "Utilisation mémoire sur les $NB_SECONDS dernières secondes" \
 	--vertical-label "Pourcentage" \
 	--start $BASE_TIME  --end $BASE_TIME+$NB_SECONDS\
-	DEF:used=$DESTINATION/memory.rrd:used:AVERAGE \
-	DEF:free=$DESTINATION/memory.rrd:free:AVERAGE \
-	DEF:available=$DESTINATION/memory.rrd:available:AVERAGE \
-	'CDEF:total=used,free,+,available,+' \
-	'CDEF:used_pct=used,total,/,100,*' \
-	'CDEF:free_pct=free,total,/,100,*' \
-	'CDEF:available_pct=available,total,/,100,*' \
-	AREA:used_pct#FF0000:"Used     " \
-	STACK:free_pct#00FF00:"Free     " \
-	STACK:available_pct#0000FF:"Available"
+  "${args[@]}" 
 }
 
 network_graph
 cpu_graph
+memory_graph

@@ -86,7 +86,7 @@ RRA:AVERAGE:0.5:1:$NB_SECONDS
 rrdtool create $DESTINATION/network.rrd \
 --start $(($BASE_TIME - 1)) \
 --step $STEP \
-DS:tx:GAUGE:5:0:15 \
+DS:tx:GAUGE:5:0:30 \
 RRA:AVERAGE:0.5:1:$NB_SECONDS
 
 collect_network () {
@@ -120,5 +120,3 @@ while [ $sec_counter -lt $(($NB_SECONDS+1)) ]; do
 	sec_counter=$((sec_counter + 1))
 	sleep 1
 done
-
-exec src/generate_graph.sh $NB_SECONDS $BASE_TIME $DESTINATION

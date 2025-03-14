@@ -1,92 +1,95 @@
 #!/bin/bash
 
 # Variables
-DURATION=60                                      # Durée en minutes
 TIME_INTERVAL=1                                 # Intervalle de temps pour la collecte des métriques (en secondes)
-DESTINATION_SERVER="10.0.0.46:6000"             # Adresse de destination (serveur HTTP ou Vector)
-VECTOR_CONFIG="./config/vector.toml"                     # Fichier de configuration temporaire pour Vector
+DESTINATION_SERVER="10.0.0.46"                  # Adresse de destination (serveur HTTP ou Vector)
+NETWORK_INTERFACE="wlp2s0"                      # Interface réseau à surveiller
+ENCODING_TYPE="csv"                             # Type d'encodage des données (csv, json, protobuf, raw_message)
 
-nb_sec=$(($DURATION * 1))                      # Durée en secondes
+CONFIG_DIR="./config"                           # Répertoire de configuration
 
-mkdir -p ./config
 
-# Nettoyage
-rm -f $VECTOR_CONFIG
+usage() {
+  echo "Usage: $0 --destination-server <destination-server> --network-interface <network-interface> --time-interval <time-interval> --encoding-type <encoding-type> <conf-dir>"
+  exit 1
+}
+
+# Analyse des options de ligne de commande
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --destination-server) DESTINATION_SERVER="$2"; shift ;;
+		--network-interface) NETWORK_INTERFACE="$2"; shift ;;
+		--time-interval) TIME_INTERVAL="$2"; shift ;;
+		--encoding-type) ENCODING_TYPE="$2"; shift ;;
+    --help) usage ;;
+    *) CONFIG_DIR="$1" ;;
+  esac
+  shift
+done
+
+echo destination server: $DESTINATION_SERVER
+echo nework interface: $NETWORK_INTERFACE
+echo encoding-type: $ENCODING_TYPE
+echo Config directory : $CONFIG_DIR
+
+
+vector_config="$CONFIG_DIR/vector_$ENCODING_TYPE.toml"            # Fichier de configuration temporaire pour Vector
+
+if [ "$ENCODING_TYPE" == "csv" ]; then
+  destination_port=6000
+elif [ "$ENCODING_TYPE" == "protobuf" ]; then
+  destination_port=6001   
+elif [ "$ENCODING_TYPE" == "json" ]; then
+  destination_port=6002
+else
+  echo "Type d'encodage non supporté"
+  exit 1
+fi
+
+address=$DESTINATION_SERVER:$destination_port   # Adresse de destination complète
+
+mkdir -p $CONFIG_DIR
+
+cp ./src/myproto.desc $CONFIG_DIR/myproto.desc
+
+rm -f $vector_config
 
 # Génération de la configuration Vector
-cat > $VECTOR_CONFIG <<EOL
+cat > $vector_config <<EOL
 # Configuration Vector pour le benchmark
 
 [sources.host_metrics]
 type = "host_metrics"
 scrape_interval_secs = $TIME_INTERVAL
-network.devices.includes = ["wlp2s0"]
+network.devices.includes = ["$NETWORK_INTERFACE"]
 collectors = ["cpu", "memory", "network"]
 
 [transforms.metrics_to_logs]
 type = "metric_to_log"
 inputs = ["host_metrics"]
 
-# [transforms.lite_logs]
-# type = "remap"
-# inputs = ["metrics_to_logs"]
-# source = '''
-#   .value = if .counter != null { del(.counter).value } else { del(.gauge).value }  
-#   del(.namespace)
-#   .name,err = if .tags.cpu != null {"cpu-" + to_string(.tags.cpu) + "-" + to_string(.tags.mode)} else {del(.name)}
-#   .name,err = del(.host)+"."+del(.name)
-#   # .message,err = .name+" "+ to_string(.value)
-
-#   del(.tags)
-#   del(.kind)
-#   del(.timestamp)
-#   '''
-
-# [sinks.console]
-# type = "console"
-# inputs = ["lite_logs"]
-# # encoding.codec = "json"
-
-# encoding.codec = "protobuf"
-# encoding.protobuf.desc_file = "$PWD/config/myproto.desc"
-# encoding.protobuf.message_type = "ExempleMessage"
-
-# # encoding.codec = "csv"
-# # encoding.csv.fields = ["host", "name", "value"]
-
 [sinks.vector]
 type = "socket"
 inputs = ["metrics_to_logs"]
-address = "$DESTINATION_SERVER"
+address = "$address"
 mode = "udp"
-
-encoding.codec = "protobuf"
-encoding.protobuf.desc_file = "$PWD/config/myproto.desc"
-encoding.protobuf.message_type = "ExempleMessage"
-
-
-# encoding.codec = "raw_message"
-
-# encoding.codec = "csv"
-# encoding.csv.fields = ["name", "value"]
-
-# encoding.codec = "json"
+# Configuration de l'encodage en fonction du type spécifié
+[sinks.vector.encoding]
+codec = "$ENCODING_TYPE"
 EOL
 
+if [ "$ENCODING_TYPE" == "protobuf" ]; then
+cat >> $vector_config <<EOL
+protobuf.desc_file = "$PWD/config/myproto.desc"
+protobuf.message_type = "ExempleMessage"
+EOL
+fi
+
+if [ "$ENCODING_TYPE" == "csv" ]; then
+cat >> $vector_config <<EOL
+csv.fields = ["name", "value"]
+EOL
+fi
+
 echo "Configuration Vector générée :"
-cat $VECTOR_CONFIG
-
-# Démarrage de Vector
-echo "Démarrage de Vector pour une durée de $nb_sec secondes..."
-vector --config-toml $VECTOR_CONFIG &
-echo "Vector démarré avec succès sur le port : $PORT"
-
-# Attente pour la durée spécifiée
-sleep $nb_sec
-
-# Arrêt de Vector
-echo "Arrêt de Vector après la durée spécifiée."
-kill $(jobs -p)
-
-
-echo "Benchmark terminé. Les données ont été envoyées à $DESTINATION_SERVER."
+cat $vector_config

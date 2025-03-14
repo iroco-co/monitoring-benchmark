@@ -1,19 +1,36 @@
 #!/bin/bash
 
-DURATION=60                         # Durée en minutes
 TIME_INTERVAL=1                    # Intervalle de temps pour la collecte des métriques (en secondes)
 DESTINATION_SERVER="10.0.0.46"     # Adresse IP ou nom DNS du serveur Collectd
-DESTINATION_PORT=25826             # Port UDP Collectd par défaut
-INTERFACE="wlp2s0"                 # Interface réseau à surveiller
-HOSTNAME="client-collectd"         # Nom du client dans les métriques Collectd
+CONF_DIR="./config"
+NETWORK_INTERFACE="wlp2s0"         # Interface réseau à surveiller
 
-# Durée en secondes
-nb_sec=$(($DURATION * 1))
+HOSTNAME="client-collectd"         # Nom du client dans les métriques Collectd
+DESTINATION_PORT=25826             # Port UDP Collectd par défaut
+
+usage() {
+  echo "Usage: $0 --duration <duration> --destination-server <destination-server> --network-interface <network-interface> --time-interval <time-interval> <conf-dir>"
+  exit 1
+}
+
+
+# Analyse des options de ligne de commande
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --duration) DURATION="$2"; shift ;;
+    --destination-server) DESTINATION_SERVER="$2"; shift ;;
+		--network-interface) NETWORK_INTERFACE="$2"; shift ;;
+		--time-interval) TIME_INTERVAL="$2"; shift ;;
+    --help) usage ;;
+    *) CONF_DIR="$1" ;;
+  esac
+  shift
+done
+
 
 # Chemins de configuration et logs
-BASE_DIR="./config"
-COLLECTD_CONF="$BASE_DIR/collectd.conf"
-COLLECTD_PID="$BASE_DIR/collectd.pid"
+collectd_conf="$CONF_DIR/collectd.conf"
+collectd_pid="$CONF_DIR/collectd.pid"
 
 # Installation de collectd-core si nécessaire
 if ! dpkg -l | grep -q "collectd-core"; then
@@ -41,11 +58,11 @@ done
 mkdir -p ./config
 
 # Nettoyage des fichiers temporaires
-rm -f $COLLECTD_CONF
+rm -f $collectd_conf
 
 # Création du fichier de configuration temporaire pour Collectd
-cat > $COLLECTD_CONF <<EOL
-PIDFile "$COLLECTD_PID"
+cat > $collectd_conf <<EOL
+PIDFile "$collectd_pid"
 Interval $TIME_INTERVAL
 
 LoadPlugin cpu
@@ -73,23 +90,8 @@ LoadPlugin network
 EOL
 
 echo "✅ Configuration Collectd générée :"
-cat $COLLECTD_CONF
+cat $collectd_conf
 
 # Supprimer l'ancien fichier de log
 rm -f $COLLECTD_LOG
 
-# Démarrage de Collectd en arrière-plan avec gestion du PID
-echo "🚀 Démarrage de Collectd pour $nb_sec secondes..."
-collectd -C $COLLECTD_CONF -f > /dev/null 2>&1 &
-echo $! > $COLLECTD_PID
-
-# Attente pour la durée spécifiée
-sleep $nb_sec
-
-# Terminer Collectd proprement
-echo "🛑 Arrêt de Collectd après la durée spécifiée."
-kill $(cat $COLLECTD_PID)
-rm -f $COLLECTD_PID
-
-echo "✅ Benchmark terminé. Les données ont été envoyées à $DESTINATION_SERVER:$DESTINATION_PORT."
-echo "📄 Logs disponibles dans $COLLECTD_LOG"
