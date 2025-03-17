@@ -1,9 +1,11 @@
 #!/bin/bash
 
-LISTENING_PORT=25826             # Port UDP Collectd par défaut
+LISTENING_PORT=25826                    # Port UDP Collectd par défaut
+CONFIG_DIR="./config"                   # Répertoire de configuration             
 
-# Chemins de configuration et logs
-COLLECTD_CONF="./config/collectd.conf"
+CONFIG_DIR=$1
+
+collectd_conf="${CONFIG_DIR}/collectd.conf"
 
 # Vérifier si une instance de Collectd tourne déjà et la stopper si nécessaire
 if pgrep -x "collectd" > /dev/null; then
@@ -12,10 +14,10 @@ if pgrep -x "collectd" > /dev/null; then
     sleep 2
 fi
 
-rm -f $COLLECTD_CONF
+rm -f $collectd_conf
 
 # Création du fichier de configuration temporaire pour Collectd
-cat > $COLLECTD_CONF <<EOL
+cat > $collectd_conf <<EOL
 LoadPlugin network
 LoadPlugin write_log
 
@@ -29,9 +31,9 @@ LoadPlugin write_log
 EOL
 
 echo "✅ Configuration Collectd générée :"
-cat $COLLECTD_CONF
+cat $collectd_conf
 
 # Démarrage de Collectd en arrière-plan avec gestion du PID
 echo "🚀 Démarrage de Collectd"
-collectd -C $COLLECTD_CONF -f
+collectd -C $collectd_conf -f
 echo "Collectd démarré avec succès !"

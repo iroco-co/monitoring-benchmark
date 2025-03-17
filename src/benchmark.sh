@@ -2,13 +2,16 @@
 
 BASE_TIME=$(date -d "2025-03-12 00:00:00" +%s) # Date de base pour la collecte de données et la génération de graphiques
 
-DURATION=$1 # sec                       # Echantillon de temps pour l'utilisation de l'outil de monitoring
+# Initialisation des variables
+DURATION=10 # sec                       # Echantillon de temps pour l'utilisation de l'outil de monitoring
 STEP=1 # sec                            # Pas de temps pour la collecte de données
 DESTINATION=$PWD/tir_${DURATION}sec     # Répertoire de destination du tir de benchmark
 DESTINATION_SERVER="10.0.0.46"          # Adresse IP ou nom DNS du serveur Collectd
 CONFIG_DIR=./config                     # Répertoire de configuration de l'outil de monitoring
 NETWORK_INTERFACE=wlp2s0                # Interface réseau à surveiller
 
+# Analyse des options de ligne de commande
+DURATION=$1
 
 TIME_BEFORE=5 # sec
 TIME_AFTER=5 # sec
@@ -108,9 +111,9 @@ create_dir
 stop_vector
 stop_collectd
 
-# bench_vector csv
-# bench_vector protobuf
-# bench_vector json
+bench_vector csv
+bench_vector protobuf
+bench_vector json
 bench_collectd
 
 sleep 1

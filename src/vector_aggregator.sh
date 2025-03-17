@@ -2,11 +2,24 @@
 
 # Initialisation des variables
 DECODING_CODEC="csv"                    # Type de décodage des données (csv, json, protobuf)
+CONFIG_DIR="./config"                   # Répertoire de configuration             
+
+usage() {
+  echo "Usage: $0 --decoding-codec <decoding-codec> <conf-dir>"
+  exit 1
+}
 
 # Analyse des options de ligne de commande
-DECODING_CODEC=$1                           
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --decoding-codec) DECODING_CODEC="$2"; shift ;;
+    --help) usage ;;
+    *) CONFIG_DIR="$1" ;;
+  esac
+  shift
+done
 
-config_file="${PWD}/config/vector_$DECODING_CODEC.toml"
+config_file="${CONFIG_DIR}/vector_$DECODING_CODEC.toml"
 
 port=6000
 

@@ -15,7 +15,13 @@ les valeurs à bench sont les suivantes:
 
 les valeurs doivent être relevées toutes les 1 secondes 
 
-le bench doit permetre de visualiser les valeurs avant, pendant et après le démarage de l'outil de monitoring
+le bench doit permetre de visualiser les valeurs avant, pendant et après le démarage de l'outil de monitoring.
+
+Pour lancer le bensh, il suffit d'executer le script benshmark.sh avec la commande suivante:
+```bash
+/bin/bash benchmark.sh [duration(seconds)]
+```
+Le fichier est configurable pour changer les parametres de collecte via les variables initialisées.
 
 ## Collectd
   Collectd est un outil de monitoring qui permet de collecter des métriques système et de les exporter vers un serveur de monitoring.
@@ -76,9 +82,33 @@ Ce script permet de générer des graphes cpu, memoire et network qui supperpose
 ```bash
 /bin/bash src/collectd_config.sh --duration [duration(seconds)]--destination-server [ip_destination_server] --time-interval [time_interval(seconds)] [destination_folder]
 ```
-Ce scripte permet de générer un fichier de configuration pour collectd avec les parametres passés en argument. Il va générer un fichier `collectd.conf` dans le __destination_folder__.
+Ce scripte permet de générer un fichier de configuration d'un observeur collectd avec les parametres passés en argument. Il va générer un fichier `collectd.conf` dans le __destination_folder__.
+
+Pour executer collectd avec ce fichier de configuration, il suffit de lancer la commande suivante:
+```bash
+collectd -C [destination_folder]/collectd.conf -f
+```
 
 ### vector_config.sh
 ```bash
   /bin/bash src/vector_config.sh --duration [duration(seconds)] --destination-server [ip_destination_server] --time-interval [time_interval(seconds)]  --network-interface [network_interface] --encoding-type [encoding_type] __destination_folder__
 ```
+Ce script permet de générer un fichier de configuration d'un observeur vector avec les parametres passés en argument. Il va générer un fichier `vector.toml` dans le __destination_folder__.
+
+Pour executer vector avec ce fichier de configuration, il suffit de lancer la commande suivante:
+```bash
+vector --config [destination_folder]/vector_[encoding_type].toml
+```
+
+### collectd_aggregator.sh
+```bash
+/bin/bash src/collectdaggregator.sh [source_folder]
+```
+Ce script permet de de générer un fichier de configuration d'un aggregateur collectd avec les parametres passés en argument. Il va générer un fichier `collectd.conf` dans le __source_folder__. Il va egalement lancer collectd avec cette configuration.
+
+### vector_aggregator.sh
+```bash
+/bin/bash src/collectdaggregator.sh --decoding-codec [decoding_codec] [source_folder]
+```
+
+Ce script permet de de générer un fichier de configuration d'un aggregateur vector avec les parametres passés en argument. Il va générer un fichier `vector.toml` dans le __source_folder__. Il va egalement lancer vector avec cette configuration.
