@@ -60,7 +60,7 @@ store_variables
 
 # Création des bases de données RRD
 rrdtool create $DESTINATION/cpu.rrd \
---start $(($BASE_TIME - 1)) \
+--start $(($BASE_TIME)) \
 --step $STEP \
 DS:user:COUNTER:5:0:U \
 DS:nice:COUNTER:5:0:U \
@@ -72,7 +72,7 @@ DS:softirq:COUNTER:5:0:U \
 RRA:AVERAGE:0.5:1:$NB_SECONDS
 
 rrdtool create $DESTINATION/memory.rrd \
---start $(($BASE_TIME - 1)) \
+--start $(($BASE_TIME)) \
 --step $STEP \
 DS:used:GAUGE:5:0:U \
 DS:free:GAUGE:5:0:U \
@@ -80,7 +80,7 @@ DS:available:GAUGE:5:0:U \
 RRA:AVERAGE:0.5:1:$NB_SECONDS
 
 rrdtool create $DESTINATION/network.rrd \
---start $(($BASE_TIME - 1)) \
+--start $(($BASE_TIME)) \
 --step $STEP \
 DS:tx:GAUGE:5:0:30 \
 RRA:AVERAGE:0.5:1:$NB_SECONDS

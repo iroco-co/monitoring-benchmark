@@ -11,7 +11,9 @@ CONFIG_DIR=./config                     # Répertoire de configuration de l'outi
 NETWORK_INTERFACE=wlp2s0                # Interface réseau à surveiller
 
 # Analyse des options de ligne de commande
-DURATION=$1
+if [ -n "$1" ]; then
+  DURATION=$1
+fi
 
 TIME_BEFORE=5 # sec
 TIME_AFTER=5 # sec

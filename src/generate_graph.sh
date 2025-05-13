@@ -4,7 +4,10 @@
 DESTINATION="$PWD/tir_@test"
 
 # Récupération des variables
-DESTINATION=$1
+if [ -n "$1" ]; then
+	DESTINATION="$1"
+fi
+
 
 # Constantes
 WIDTH=$(echo "800 * 1.5" | bc)

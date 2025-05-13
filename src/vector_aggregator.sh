@@ -19,6 +19,13 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
+if [ ! -d $CONFIG_DIR ]; then
+    echo "Le répertoire de configuration $CONFIG_DIR n'existe pas"
+    # Création du répertoire de configuration
+    mkdir -p $CONFIG_DIR
+    echo "Création du répertoire de configuration $CONFIG_DIR"
+fi
+
 config_file="${CONFIG_DIR}/vector_$DECODING_CODEC.toml"
 
 port=6000

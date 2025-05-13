@@ -25,7 +25,7 @@ Le fichier est configurable pour changer les parametres de collecte via les vari
 
 ## Collectd
   Collectd est un outil de monitoring qui permet de collecter des métriques système et de les exporter vers un serveur de monitoring.
-  Il est très légeret stable.
+  Il est très léger et stable.
   ### Installation
   ```
   sudo apt install collectd
