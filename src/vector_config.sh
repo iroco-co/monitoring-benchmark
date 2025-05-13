@@ -32,7 +32,7 @@ echo encoding-type: $ENCODING_TYPE
 echo Config directory : $CONFIG_DIR
 
 
-vector_config="$CONFIG_DIR/vector_$ENCODING_TYPE.tom"            # Fichier de configuration temporaire pour Vector
+vector_config="$CONFIG_DIR/vector_$ENCODING_TYPE.toml"            # Fichier de configuration temporaire pour Vector
 
 if [ "$ENCODING_TYPE" == "csv" ]; then
   destination_port=6000
