@@ -1,6 +1,6 @@
 # iroco.co
 
-The site has moved [here](https://codeberg.org/iroco/low-tech).
+The site has moved [here](https://codeberg.org/iroco/monitoring-benchmark).
 
 ---
 As an organization that values the building of digital commons, we do not want to participate to the OpenAI/Microsoft LLM model development. 
